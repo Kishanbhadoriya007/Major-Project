@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trinity AI PDF Processor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #0056b3; /* Adjusted blue */
+            --secondary-color: #f8f9fa; /* Light grey background */
+            --accent-color: #28a745; /* Green for buttons */
+            --accent-hover-color: #218838;
+            --text-color: #343a40; /* Darker grey text */
+            --border-color: #dee2e6; /* Lighter border */
+            --error-bg: #f8d7da;
+            --error-border: #f5c6cb;
+            --error-text: #721c24;
+            --info-bg: #d1ecf1;
+            --info-border: #bee5eb;
+            --info-text: #0c5460;
+            --card-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            --border-radius: 6px;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 850px; /* Slightly wider */
+            margin: 20px auto;
+            background: #ffffff;
+            padding: 30px; /* More padding */
+            border-radius: var(--border-radius);
+            box-shadow: var(--card-shadow);
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary-color);
+            margin-bottom: 15px; /* Adjusted margin */
+            font-weight: 700;
+        }
+         h2 {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--border-color); /* Thicker border */
+            padding-bottom: 10px;
+            margin-top: 0;
+             margin-bottom: 20px; /* Spacing below h2 */
+             font-weight: 500;
+        }
+         h3 {
+             color: var(--primary-color);
+             margin-top: 25px;
+             margin-bottom: 15px;
+             font-weight: 500;
+         }
+         h4 {
+             margin-top: 0;
+             margin-bottom: 15px;
+             color: var(--text-color);
+             font-weight: 500;
+         }
+
+        p {
+            margin-bottom: 15px;
+        }
+
+        .form-section, .results-section {
+            margin-bottom: 30px; /* Increased spacing */
+            padding: 25px; /* More padding */
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            background-color: #fff; /* Ensure white background */
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500; /* Bolder labels */
+             color: #495057; /* Slightly muted label color */
+        }
+
+        input[type="file"], select, input[type="number"] {
+            display: block; /* Ensure they take full width */
+            width: 100%; /* Use 100% width */
+            padding: 12px; /* Larger padding */
+            margin-bottom: 20px; /* Increased spacing */
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            box-sizing: border-box; /* Include padding in width */
+            background-color: #f8f9fa; /* Subtle background */
+            font-size: 1rem;
+             transition: border-color 0.2s ease-in-out;
+        }
+         input[type="file"] {
+             background-color: #fff; /* File input usually looks better white */
+             padding: 8px 12px; /* Adjust padding for file input */
+         }
+
+        input:focus, select:focus {
+             outline: none;
+             border-color: var(--primary-color);
+             box-shadow: 0 0 0 2px rgba(0, 86, 179, 0.25);
+         }
+
+        .radio-group label {
+            display: inline-block;
+            margin-right: 25px; /* More spacing */
+            font-weight: 400; /* Normal weight for radio labels */
+            cursor: pointer;
+             position: relative;
+             padding-left: 25px; /* Space for custom radio */
+             margin-bottom: 10px; /* Ensure vertical spacing */
+        }
+
+        .radio-group input[type="radio"] {
+            /* Hide default radio */
+             opacity: 0;
+             position: absolute;
+             cursor: pointer;
+         }
+         /* Create custom radio appearance */
+         .radio-group label::before {
+             content: '';
+             position: absolute;
+             left: 0;
+             top: 2px; /* Adjust vertical alignment */
+             width: 16px;
+             height: 16px;
+             border: 1px solid var(--border-color);
+             border-radius: 50%;
+             background-color: #fff;
+             transition: background-color 0.2s, border-color 0.2s;
+         }
+         .radio-group input[type="radio"]:checked + label::before {
+             background-color: var(--primary-color);
+             border-color: var(--primary-color);
+         }
+         /* Add inner circle */
+         .radio-group label::after {
+             content: '';
+             position: absolute;
+             left: 5px; /* Center inner circle */
+             top: 7px;  /* Center inner circle */
+             width: 8px;
+             height: 8px;
+             border-radius: 50%;
+             background-color: #fff;
+             transform: scale(0);
+             transition: transform 0.2s;
+         }
+         .radio-group input[type="radio"]:checked + label::after {
+             transform: scale(1);
+         }
+
+
+        button[type="submit"] {
+            display: inline-block;
+            padding: 12px 30px; /* Larger button */
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-size: 1.1rem; /* Slightly larger font */
+            font-weight: 500;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease;
+            text-transform: uppercase; /* Uppercase text */
+             letter-spacing: 0.5px;
+        }
+
+        button[type="submit"]:hover {
+            background-color: var(--accent-hover-color);
+            transform: translateY(-1px); /* Subtle lift effect */
+             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        button[type="submit"]:active {
+            transform: translateY(0);
+        }
+
+        .error, .info { /* Combined styles for messages */
+            font-weight: 500; /* Slightly bolder message text */
+            margin: 20px 0; /* More vertical margin */
+            padding: 15px 20px; /* More padding */
+            border: 1px solid;
+            border-radius: var(--border-radius);
+            position: relative; /* For potential icon placement */
+        }
+
+        .error {
+            color: var(--error-text);
+            background-color: var(--error-bg);
+            border-color: var(--error-border);
+        }
+
+        .info {
+            color: var(--info-text);
+            background-color: var(--info-bg);
+            border-color: var(--info-border);
+        }
+
+        .results-section pre {
+            background-color: var(--secondary-color); /* Use light grey */
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 450px; /* Slightly taller */
+            overflow-y: auto;
+            font-family: 'Courier New', Courier, monospace; /* Monospace for code/text output */
+            font-size: 0.9rem;
+            line-height: 1.5;
+             color: var(--text-color);
+        }
+
+        .results-section a.file-link { /* Style download links */
+            display: inline-block; /* Treat like buttons */
+            margin-right: 15px;
+            margin-bottom: 10px; /* Spacing if they wrap */
+            padding: 8px 15px;
+            color: #fff; /* White text */
+            background-color: var(--primary-color); /* Use primary color */
+            border: 1px solid var(--primary-color);
+            text-decoration: none;
+            border-radius: var(--border-radius);
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+            font-weight: 500;
+        }
+         .results-section a.file-link:hover {
+             background-color: #00418a; /* Darker blue on hover */
+             border-color: #003775;
+             text-decoration: none;
+         }
+
+        .image-gallery {
+             display: flex; /* Use flexbox for layout */
+             flex-wrap: wrap; /* Allow wrapping */
+             gap: 15px; /* Spacing between images */
+             margin-top: 15px;
+             margin-bottom: 20px;
+             padding: 15px;
+             background-color: var(--secondary-color); /* Light background for gallery */
+             border-radius: var(--border-radius);
+             border: 1px solid var(--border-color);
+         }
+
+        .image-gallery img {
+            max-width: 180px; /* Slightly larger */
+            max-height: 180px;
+            height: auto; /* Maintain aspect ratio */
+            border: 1px solid #ccc; /* Lighter border */
+            border-radius: var(--border-radius);
+            background-color: #fff; /* White background behind image */
+             padding: 4px; /* Small padding around image */
+             box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+        }
+
+        .options-group {
+            border: 1px dashed var(--border-color); /* Dashed border */
+            padding: 20px;
+            margin-top: 25px;
+            margin-bottom: 25px;
+            border-radius: var(--border-radius);
+            background-color: #fdfdfd; /* Very light background */
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .processing-info {
+            font-style: italic;
+            color: #555;
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: var(--secondary-color);
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+            display: inline-block; /* Fit content */
+        }
+
+        .processed-filename { /* Style the filename display */
+            font-weight: 500;
+            color: var(--primary-color);
+         }
+
+         /* Basic Responsive adjustments */
+         @media (max-width: 600px) {
+             .container {
+                 padding: 20px;
+             }
+             .form-section, .results-section {
+                 padding: 15px;
+             }
+             h1 {
+                 font-size: 1.8rem;
+             }
+             button[type="submit"] {
+                 width: 100%; /* Full width button on small screens */
+                 padding: 14px;
+             }
+            .radio-group label {
+                 display: block; /* Stack radios vertically */
+                 margin-right: 0;
+                 margin-bottom: 15px;
+             }
+             .image-gallery {
+                 justify-content: center; /* Center images when stacked */
+             }
+             .results-section a.file-link {
+                 width: calc(100% - 30px); /* Near full width links */
+                 text-align: center;
+                 margin-right: 0;
+             }
+         }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Trinity AI PDF Processor</h1>
+        <p>Upload a PDF file and choose an operation: Summarize, Translate, or Identify Images.</p>
+
+        <!-- Flash Messages Area -->
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            {% for message in messages %}
+              <!-- Assuming flash messages are informational -->
+              <div class="info">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+        <!-- End Flash Messages -->
+
+        <div class="form-section">
+            <h2>Upload and Process</h2>
+            <form method="post" enctype="multipart/form-data" id="pdf-form">
+                <div>
+                    <label for="pdf_file">Select PDF File:</label>
+                    <input type="file" name="pdf_file" id="pdf_file" accept=".pdf" required>
+                </div>
+
+                <div>
+                    <label>Select Operation:</label>
+                    <div class="radio-group">
+                        <!-- Note: The input MUST come BEFORE the label for the CSS sibling selector (::before, ::after) trick to work easily -->
+                        <input type="radio" name="mode" value="summarize" id="mode_summarize" required {% if selected_mode == 'summarize' %}checked{% endif %}>
+                        <label for="mode_summarize">Summarize Text</label>
+
+                        <input type="radio" name="mode" value="translate" id="mode_translate" {% if selected_mode == 'translate' %}checked{% endif %}>
+                        <label for="mode_translate">Translate Text</label>
+
+                        <input type="radio" name="mode" value="identify_images" id="mode_identify_images" {% if selected_mode == 'identify_images' %}checked{% endif %}>
+                        <label for="mode_identify_images">Identify Images</label>
+                    </div>
+                </div>
+
+                <!-- Translation Options -->
+                <div id="translation-options" class="options-group {% if selected_mode != 'translate' %}hidden{% endif %}">
+                    <h4>Translation Options</h4>
+                    <label for="target_lang">Target Language:</label>
+                    <select name="target_lang" id="target_lang">
+                        <!-- Add more languages as needed -->
+                        <option value="fr"{% if request.form.target_lang == 'fr' %} selected{% endif %}>French</option>
+                        <option value="es"{% if request.form.target_lang == 'es' %} selected{% endif %}>Spanish</option>
+                        <option value="de"{% if request.form.target_lang == 'de' %} selected{% endif %}>German</option>
+                        <option value="it"{% if request.form.target_lang == 'it' %} selected{% endif %}>Italian</option>
+                        <option value="pt"{% if request.form.target_lang == 'pt' %} selected{% endif %}>Portuguese</option>
+                        <option value="ru"{% if request.form.target_lang == 'ru' %} selected{% endif %}>Russian</option>
+                        <option value="ja"{% if request.form.target_lang == 'ja' %} selected{% endif %}>Japanese</option>
+                        <option value="zh"{% if request.form.target_lang == 'zh' %} selected{% endif %}>Chinese</option>
+                        <option value="ar"{% if request.form.target_lang == 'ar' %} selected{% endif %}>Arabic</option>
+                    </select>
+                </div>
+
+                <!-- Summarization Options -->
+                <div id="summary-options" class="options-group {% if selected_mode != 'summarize' %}hidden{% endif %}">
+                    <h4>Summarization Options</h4>
+                    <label for="min_summary_length">Min Summary Length (Tokens):</label>
+                    <input type="number" name="min_summary_length" id="min_summary_length" value="{{ request.form.min_summary_length or 50 }}" min="5">
+
+                    <label for="max_summary_length">Max Summary Length (Tokens):</label>
+                    <input type="number" name="max_summary_length" id="max_summary_length" value="{{ request.form.max_summary_length or 250 }}" min="10">
+                </div>
+
+                <button type="submit">Process PDF</button>
+            </form>
+        </div>
+
+        <!-- Results Section -->
+        {% if processed_filename or error_message %}
+        <div class="results-section">
+            <h2>Results {% if processed_filename %}for: <span class="processed-filename">{{ processed_filename }}</span>{% endif %}</h2>
+
+             {% if duration %}
+                <p class="processing-info">Processing Time: {{ duration }}</p>
+            {% endif %}
+
+            {% if error_message %}
+                <div class="error">Error: {{ error_message }}</div>
+            {% endif %}
+
+            <!-- Display results based on mode -->
+            {% if results %}
+                <h3>Output:</h3>
+                {% if selected_mode == 'identify_images' %}
+                     <h4>Extracted Images (if any):</h4>
+                     <div class="image-gallery">
+                        {% if image_urls %}
+                            {% for img_url in image_urls %}
+                                <img src="{{ img_url }}" alt="Extracted Image from PDF">
+                            {% endfor %}
+                         {% else %}
+                             <p>No images were visually extracted or found in the PDF.</p>
+                         {% endif %}
+                    </div>
+                    <h4>Image Captions (JSON):</h4>
+                    <pre>{{ results }}</pre> {# Display JSON captions #}
+
+                {% elif selected_mode == 'summarize' %}
+                     <h4>Summary:</h4>
+                     <pre>{{ results }}</pre> {# Display text summary #}
+
+                {% elif selected_mode == 'translate' %}
+                     <h4>Translation:</h4>
+                     <pre>{{ results }}</pre> {# Display text translation #}
+
+                 {% else %} {# Fallback for potentially other modes or just general results #}
+                     <pre>{{ results }}</pre>
+                {% endif %}
+
+            {% elif not error_message and processed_filename %}
+                 {# Only show this info message if there wasn't an error but also no specific text 'results' to display #}
+                 <p class="info">Processing complete. Check below for downloadable files.</p>
+            {% endif %}
+            <!-- End Display results -->
+
+            <!-- Download Links -->
+            {% if output_files %}
+                <h3>Download Results:</h3>
+                <div> {# Wrap links for better spacing control #}
+                    {% if output_files.summary %}
+                        <a href="{{ output_files.summary }}" download class="file-link">Download Summary (.txt)</a>
+                    {% endif %}
+                    {% if output_files.translation %}
+                        <a href="{{ output_files.translation }}" download class="file-link">Download Translation (.txt)</a>
+                    {% endif %}
+                    {% if output_files.captions %}
+                        <a href="{{ output_files.captions }}" download class="file-link">Download Image Captions (.json)</a>
+                    {% endif %}
+                </div>
+            {% endif %}
+            <!-- End Download Links -->
+
+        </div>
+        {% endif %}
+        <!-- End Results Section -->
+    </div>
+
+    <script>
+        // JavaScript remains the same as it correctly handles showing/hiding based on class
+        const form = document.getElementById('pdf-form');
+        const modeRadios = form.elements['mode']; // Correctly gets radio buttons by name
+        const translationOptions = document.getElementById('translation-options');
+        const summaryOptions = document.getElementById('summary-options');
+        const targetLangSelect = document.getElementById('target_lang');
+        const minLengthInput = document.getElementById('min_summary_length');
+        const maxLengthInput = document.getElementById('max_summary_length');
+
+        function toggleOptions() {
+            // Use the checked radio button's value
+            const selectedMode = document.querySelector('input[name="mode"]:checked')?.value; // More robust way to get checked value
+
+            translationOptions.classList.add('hidden');
+            summaryOptions.classList.add('hidden');
+
+            // Reset required attribute for inputs that might be hidden
+             targetLangSelect.required = false;
+             minLengthInput.required = false;
+             maxLengthInput.required = false;
+
+
+            if (selectedMode === 'translate') {
+                translationOptions.classList.remove('hidden');
+                 targetLangSelect.required = true; // Make required only when visible
+            } else if (selectedMode === 'summarize') {
+                summaryOptions.classList.remove('hidden');
+                 minLengthInput.required = true; // Make required only when visible
+                 maxLengthInput.required = true;
+            }
+        }
+
+        // Add event listener to each radio button
+        for (let i = 0; i < modeRadios.length; i++) {
+            modeRadios[i].addEventListener('change', toggleOptions);
+        }
+
+        // Call toggleOptions on initial page load to set the correct state
+        // based on Flask rendering (e.g., after form submission)
+        document.addEventListener('DOMContentLoaded', toggleOptions);
+
+    </script>
+
+</body>
+</html>

@@ -1,60 +1,67 @@
-# summarizer.py
+# summarizer.py (Updated for Flask)
 from transformers import pipeline
 import torch
+import logging
 
-# Determine device (GPU if available, otherwise CPU)
-DEVICE = 0 if torch.cuda.is_available() else -1
-print(f"[SUMMARIZER] Using device: {'cuda' if DEVICE == 0 else 'cpu'}")
+logger = logging.getLogger(__name__)
 
-# Load the summarization pipeline (downloads model on first run)
-# Models to try: 'facebook/bart-large-cnn', 'google/pegasus-xsum', 't5-small', 't5-base'
-MODEL_NAME = 'facebook/bart-large-cnn'
-try:
-    summarizer = pipeline("summarization", model=MODEL_NAME, device=DEVICE)
-    print(f"[SUMMARIZER] Loaded model '{MODEL_NAME}'.")
-except Exception as e:
-    print(f"[ERROR] Failed to load summarization model '{MODEL_NAME}': {e}")
-    summarizer = None # Indicate failure
+# --- Cache for loaded pipelines (Simple in-process cache per module) ---
+_loaded_summarizer_pipelines = {}
 
-def summarize_text(text: str, max_length: int = 150, min_length: int = 30, chunk_size: int = 1024) -> str:
-    """Summarizes the input text using a pre-loaded pipeline."""
-    if not summarizer:
-        return "[ERROR] Summarization model not loaded."
+def summarize_text(text: str,
+                   max_length: int = 150,
+                   min_length: int = 30,
+                   chunk_size: int = 1024,
+                   device: int = -1, # Pass device setting
+                   model_name: str = 'facebook/bart-large-cnn'
+                   ) -> str:
+    """Summarizes the input text using a cached or newly loaded pipeline."""
+    global _loaded_summarizer_pipelines
+    pipeline_key = f"summarizer_{model_name}_dev{device}" # Key includes device
+
+    if pipeline_key not in _loaded_summarizer_pipelines:
+        logger.info(f"Loading summarization model '{model_name}' on device {device}...")
+        try:
+            summarizer_pipeline = pipeline("summarization", model=model_name, device=device)
+            _loaded_summarizer_pipelines[pipeline_key] = summarizer_pipeline
+            logger.info(f"Loaded summarization model '{model_name}'.")
+        except Exception as e:
+            logger.error(f"Failed to load summarization model '{model_name}': {e}", exc_info=True)
+            raise RuntimeError(f"Summarization model '{model_name}' could not be loaded: {e}") from e
+    else:
+        summarizer_pipeline = _loaded_summarizer_pipelines[pipeline_key]
+        logger.info(f"Using cached summarization model '{model_name}'.")
+
     if not text:
+        logger.info("No text provided for summarization.")
         return "[INFO] No text provided for summarization."
 
     try:
-        print("[INFO] Starting summarization...")
-        # Simple chunking based on tokenizer max length (less sophisticated)
-        # More robust chunking might split by paragraphs or use sentence boundaries.
-        # BART's max input length is often 1024 tokens. Let's use chunk_size for characters as proxy.
-
+        logger.info("Starting summarization...")
         text_chunks = [text[i:i+chunk_size] for i in range(0, len(text), chunk_size)]
         all_summaries = []
         total_chunks = len(text_chunks)
 
         for i, chunk in enumerate(text_chunks):
-            print(f"[INFO] Summarizing chunk {i+1}/{total_chunks}...")
-            # Ensure chunk isn't too short for min_length constraint of summary
-            effective_min_length = min(min_length, len(chunk.split()) // 3) # Rough heuristic
-            if effective_min_length < 5: effective_min_length = 5 # Absolute minimum
+            logger.info(f"Summarizing chunk {i+1}/{total_chunks}...")
+            effective_min_length = min(min_length, len(chunk.split()) // 3)
+            if effective_min_length < 5: effective_min_length = 5
 
-            summary = summarizer(chunk, max_length=max_length, min_length=effective_min_length, do_sample=False)[0]['summary_text']
+            # Ensure chunk isn't trivially small compared to max_length asked
+            effective_max_length = max(max_length, effective_min_length + 10) # Ensure max > min
+
+            summary = summarizer_pipeline(chunk, max_length=effective_max_length, min_length=effective_min_length, do_sample=False)[0]['summary_text']
             all_summaries.append(summary)
 
         final_summary = "\n".join(all_summaries)
 
-        # Optional: If the combined summary is too long, summarize it again
-        if len(final_summary) > max_length * 1.5: # If significantly longer than one chunk's max
-             print("[INFO] Summarizing the combined summaries...")
-             final_summary = summarizer(final_summary, max_length=max_length+50, min_length=min_length, do_sample=False)[0]['summary_text']
+        if len(final_summary) > max_length * 1.5 and len(text_chunks) > 1: # Only re-summarize if multiple chunks were combined
+            logger.info("Summarizing the combined summaries...")
+            final_summary = summarizer_pipeline(final_summary, max_length=max_length+50, min_length=min_length, do_sample=False)[0]['summary_text']
 
-
-        print("[INFO] Summarization complete.")
+        logger.info("Summarization complete.")
         return final_summary
 
     except Exception as e:
-        print(f"[ERROR] Summarization failed: {e}")
-        # Consider returning partial summary if applicable:
-        # if all_summaries: return "\n".join(all_summaries) + "\n[ERROR] Summarization incomplete."
-        return "[ERROR] Summarization process failed."
+        logger.error(f"Summarization failed: {e}", exc_info=True)
+        raise RuntimeError(f"Summarization process failed: {e}") from e

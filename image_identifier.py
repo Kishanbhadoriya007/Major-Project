@@ -1,54 +1,69 @@
-# image_identifier.py
+# image_identifier.py (Updated for Flask)
 from transformers import pipeline
 from PIL import Image
 import torch
 import os
+import logging
 
-DEVICE = 0 if torch.cuda.is_available() else -1
-print(f"[IMAGE_IDENTIFIER] Using device: {'cuda' if DEVICE == 0 else 'cpu'}")
+logger = logging.getLogger(__name__)
 
-# Using an image captioning model
-# Models to try: 'Salesforce/blip-image-captioning-large', 'Salesforce/blip-image-captioning-base', 'nlpconnect/vit-gpt2-image-captioning'
-MODEL_NAME = 'Salesforce/blip-image-captioning-base' # Base model is smaller/faster
-try:
-    # Check if Pillow is available, required by image pipelines
-    _ = Image.new('RGB', (60, 30), color = 'red')
+# --- Cache for loaded pipelines (Simple in-process cache per module) ---
+_loaded_captioner_pipelines = {}
 
-    captioner = pipeline("image-to-text", model=MODEL_NAME, device=DEVICE)
-    print(f"[IMAGE_IDENTIFIER] Loaded model '{MODEL_NAME}'.")
-except ImportError:
-    print("[ERROR] Pillow library not found or corrupted. Image identification requires Pillow.")
-    captioner = None
-except Exception as e:
-    print(f"[ERROR] Failed to load image captioning model '{MODEL_NAME}': {e}")
-    captioner = None
+def identify_image_batch(image_paths: list[str],
+                         device: int = -1, # Pass device setting
+                         model_name: str = 'Salesforce/blip-image-captioning-base'
+                         ) -> dict[str, str]:
+    """Generates captions for a list of image files (absolute paths)."""
+    global _loaded_captioner_pipelines
+    pipeline_key = f"captioner_{model_name}_dev{device}" # Key includes device
 
-def identify_image_batch(image_paths: list[str]) -> dict[str, str]:
-    """Generates captions for a list of image files."""
-    if not captioner:
-        return {"error": "Image captioning model not loaded."}
+    if pipeline_key not in _loaded_captioner_pipelines:
+        logger.info(f"Loading image captioning model '{model_name}' on device {device}...")
+        try:
+            # Check if Pillow is available first
+            _ = Image.new('RGB', (1, 1))
+
+            captioner = pipeline("image-to-text", model=model_name, device=device)
+            _loaded_captioner_pipelines[pipeline_key] = captioner
+            logger.info(f"Loaded image model '{model_name}'.")
+        except ImportError:
+             logger.error("Pillow library not found or corrupted. Image identification requires Pillow.", exc_info=True)
+             raise RuntimeError("Pillow library not found or corrupted. Cannot perform image identification.")
+        except Exception as e:
+            logger.error(f"Failed to load image captioning model '{model_name}': {e}", exc_info=True)
+            raise RuntimeError(f"Image captioning model '{model_name}' could not be loaded: {e}") from e
+    else:
+        captioner = _loaded_captioner_pipelines[pipeline_key]
+        logger.info(f"Using cached image model '{model_name}'.")
+
+
     if not image_paths:
+        logger.info("No image paths provided for identification.")
         return {"info": "No image paths provided."}
 
     results = {}
-    print(f"[INFO] Identifying {len(image_paths)} images...")
+    logger.info(f"Identifying {len(image_paths)} images...")
     total_images = len(image_paths)
 
     for i, img_path in enumerate(image_paths):
-        base_name = os.path.basename(img_path)
-        print(f"[INFO] Processing image {i+1}/{total_images}: {base_name}...")
+        base_name = os.path.basename(img_path) # Use filename as key
+        logger.info(f"Processing image {i+1}/{total_images}: {base_name}...")
         try:
-            # Open image using Pillow (ensure compatibility)
+            if not os.path.exists(img_path):
+                 raise FileNotFoundError(f"Image file not found: {img_path}")
+
             img = Image.open(img_path).convert("RGB") # Convert to RGB
             caption = captioner(img)[0]['generated_text']
             results[base_name] = caption
-            print(f"  -> Caption: {caption}")
-        except FileNotFoundError:
-            print(f"[WARN] Image file not found: {img_path}")
-            results[base_name] = "[ERROR] File not found"
+            logger.info(f"  -> Caption: {caption}")
+
+        except FileNotFoundError as fnf_e:
+             logger.warning(f"Image file not found: {img_path}")
+             results[base_name] = f"[ERROR] File not found: {fnf_e}"
         except Exception as e:
-            print(f"[ERROR] Failed to identify image {base_name}: {e}")
+            logger.error(f"Failed to identify image {base_name}: {e}", exc_info=True)
             results[base_name] = f"[ERROR] Processing failed: {e}"
 
-    print("[INFO] Image identification complete.")
+    logger.info("Image identification complete.")
     return results

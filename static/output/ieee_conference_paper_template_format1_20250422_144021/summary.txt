@@ -1,0 +1,10 @@
+Papers in Two-Column Format for Conference Proceedings Published by IEEE. Preparation of Papers in Two Column Format for Conference Proceedings published by IEEE*. In this article, we show how to prepare papers for IEEE conference proceedings.
+Use US letter size paper (8.5 by 11 inches) Times New Roman is the preferred font. Use high resolution (300dpi or above) Figures, plots, drawings and photos for best printing result. Use automatic hyphenation and check spelling and grammar.
+Detailed instructions on how to prepare PDF files for IEEE Xplore© can be found at http://www.ieee.org/pubs/confpubcenter. PDF job setting files for Acrobat versions 4, 5 and 6 can be downloaded from the above webpage as well.
+Figure axis labels are often a source of confusion. Use the                 abbreviation “Fig. #,” even at the beginning of a sentence. For example, as shown in Fig. 1, write “Magnetization (M)” not just “M.” Put units in parentheses.
+Papers that have not been published should be cited as “unpublished” Papers that have been accepted for publication are cited as  “in press” In a paper title,capitalize the first word and all other words except for prepositions.
+Abbreviations such as IEEE, SI, MKS, CGS, ac, dc, and rms do not have to be defined. Use an en dash (–) rather than a hyphen for a minus sign. Punctuate equations with periods when they are part of a sentence.
+The Roman numerals used to number the section headings are optional. Cite equations using “(1),” not Eq. (1)” or “equation (1” except at the                 beginning of a sentence.
+Use either SI (MKS) or CGS as primary units. English units may be used as secondary units. Use English units as identifiers in trade, such as “3.5-inch disk drive.” The word “data” is plural, not singular.
+Do not use the word “essentially” to mean “approximately” or “effectively.” Do not confuse “imply” and “infer” The prefix “non” is not a word; it should be joined to the word it “modifies”
+H. Simpson, Dumb Robots, 3rd ed., Springfield: UOS Press, 2004, pp.6-9. M. King and B. Zhu, “Gaming strategies,” in Path Planning to the West,                 vol. II, Xian: Jiaoda Press, 1998, p. 158-176.
